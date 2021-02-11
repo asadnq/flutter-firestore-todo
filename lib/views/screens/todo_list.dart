@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'package:reactive_fl_app/constants/constants.dart';
 
 import 'package:reactive_fl_app/models/TodoModel.dart';
-import 'package:reactive_fl_app/resources/todo_api_provider.dart';
 import 'package:reactive_fl_app/views/screens/create_todo.dart';
 import 'package:reactive_fl_app/resources/todo_database.dart';
+import 'package:reactive_fl_app/views/screens/todo_detail.dart';
 
 class TodoList extends StatefulWidget {
   static const routeName = '/home';
@@ -28,6 +28,11 @@ class _TodoListState extends State<TodoList> {
   initState() {
     super.initState();
     context.read<TodoDatabase>().fetchTodoList();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        filterTags = [];
+      });
+    });
   }
 
   @override
@@ -44,9 +49,12 @@ class _TodoListState extends State<TodoList> {
       ),
       body: Column(
         children: [
-          SizedBox(
-            height: 120,
-            child: _buildTagList(context),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: SizedBox(
+              height: 120,
+              child: _buildTagList(context),
+            ),
           ),
           Expanded(
             child: _buildTodoList(context),
@@ -63,66 +71,62 @@ class _TodoListState extends State<TodoList> {
   }
 
   Widget _buildTagList(BuildContext context) {
-    return StreamBuilder<Set<String>>(
-      stream: context.read<TodoDatabase>().todoTagsStream,
-      builder: (_, snapshot) {
-        if (snapshot.hasData) {
-          final tags = snapshot.data.toList();
-          return ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: tags.length,
-            itemBuilder: (_, index) {
-              final tag = tags[index];
-              return InputChip(
-                label: Text(tag),
-                selected: filterTags.contains(tag),
-                onPressed: () {
-                  setState(() {
-                    if (filterTags.contains(tag)) {
-                      filterTags.remove(tag);
-                    } else {
-                      filterTags.add(tag);
-                    }
+    return ListView.separated(
+      separatorBuilder: (_, __) => SizedBox(
+        width: 20,
+      ),
+      scrollDirection: Axis.horizontal,
+      itemCount: Constants.todoTags.length,
+      itemBuilder: (_, index) {
+        final tag = Constants.todoTags[index];
+        return InputChip(
+          label: Text(tag),
+          selected: filterTags.contains(tag),
+          selectedColor: Colors.pinkAccent,
+          onPressed: () {
+            setState(() {
+              if (filterTags.contains(tag)) {
+                filterTags.remove(tag);
+              } else {
+                filterTags.add(tag);
+              }
 
-                    context
-                        .read<TodoDatabase>()
-                        .fetchTodoList(tags: filterTags);
-                  });
-                },
-              );
-            },
-          );
-        }
-
-        return CircularProgressIndicator();
+              context.read<TodoDatabase>().fetchTodoList(tags: filterTags);
+            });
+          },
+        );
       },
     );
   }
 
   Widget _buildTodoList(BuildContext context) {
-    // final service = TodoApiProvider();
-    // return StreamBuilder<List<TodoModel>>(
-    // stream: context.watch<TodoDatabase>().todosStream(),
-    // stream: db.todosStream(),
     return StreamBuilder<Stream<List<TodoModel>>>(
       stream: context.watch<TodoDatabase>().todoList,
       builder: (context, snapshot) {
-        if (snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.active) {
           return StreamBuilder<List<TodoModel>>(
             stream: snapshot.data,
             builder: (context, snapshot) {
               if (snapshot.hasData &&
                   snapshot.connectionState == ConnectionState.active) {
-                // if (snapshot.hasData) {
-                // final todos = snapshot.data.docs
-                //     .map((doc) => TodoModel.fromJson(doc.data()))
-                //     .toList();
                 final todos = snapshot.data;
+
+                if (todos.isEmpty) {
+                  return Center(child: Text('No items'));
+                }
+
                 return ListView.builder(
                   itemCount: todos.length,
                   itemBuilder: (_, index) {
                     final todo = todos[index];
                     return ListTile(
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => TodoDetail(todo: todo),
+                            ));
+                      },
                       title: Text(todo.title),
                       subtitle: todo.tags.isEmpty
                           ? Text('no provided tags')
@@ -136,8 +140,11 @@ class _TodoListState extends State<TodoList> {
                 );
               }
 
-              return Text(
-                  '${snapshot.connectionState.toString()} ${snapshot.hasData}');
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+
+              return Center(child: Text('unkown error occured'));
             },
           );
         }

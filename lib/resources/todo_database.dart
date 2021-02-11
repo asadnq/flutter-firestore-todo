@@ -29,13 +29,6 @@ class TodoDatabase {
     _todoController.sink.add(snapshots);
   }
 
-  Stream<Set<String>> get todoTagsStream {
-    return firestore.collection('todos').snapshots().map((snapshot) =>
-        snapshot.docs.map((doc) => TodoModel.fromJson(doc.data()).tags).fold(
-            <String>[],
-            (List<String> result, element) => [...result, ...element]).toSet());
-  }
-
   Future<void> addTodo(TodoModel todo) async {
     final uuid = Uuid();
     final data = TodoModel.update(todo, id: uuid.v4());
@@ -49,7 +42,11 @@ class TodoDatabase {
     _todoController.close();
   }
 
-  Future<void> updateTodo(TodoModel todo) async {
-    await firestore.collection('todos').doc(todo.id).set(todo.toJson());
+  Future<void> updateTodo(String id, TodoModel todo) async {
+    await firestore.collection('todos').doc(id).set(todo.toJson());
+  }
+
+  Future<void> deleteTodo(String id) async {
+    await firestore.collection('todos').doc(id).delete();
   }
 }

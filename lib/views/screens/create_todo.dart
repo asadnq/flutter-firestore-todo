@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:reactive_fl_app/constants/constants.dart';
 import 'package:reactive_fl_app/models/TodoModel.dart';
 import 'package:reactive_fl_app/resources/todo_database.dart';
 import 'package:provider/provider.dart';
-
-final todoTags = ['urgent', 'completed', 'on hold', 'started'];
 
 class CreateTodo extends StatefulWidget {
   @override
@@ -34,7 +33,7 @@ class _CreateTodoState extends State<CreateTodo> {
             height: 40,
           ),
           Wrap(
-            children: todoTags
+            children: Constants.todoTags
                 .map((tag) => Padding(
                       padding: EdgeInsets.only(right: 4),
                       child: InputChip(
