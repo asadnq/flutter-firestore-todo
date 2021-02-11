@@ -8,9 +8,11 @@ class App extends StatelessWidget {
     return MaterialApp(
       initialRoute: TodoList.routeName,
       onGenerateRoute: (settings) {
-        return MaterialPageRoute(
-            settings: RouteSettings(name: TodoList.routeName),
-            builder: (_) => TodoList());
+        if (settings.name == TodoList.routeName) {
+          return MaterialPageRoute(
+              settings: RouteSettings(name: TodoList.routeName),
+              builder: (_) => TodoList());
+        }
       },
     );
   }
