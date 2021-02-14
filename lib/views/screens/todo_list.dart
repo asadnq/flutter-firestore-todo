@@ -57,7 +57,10 @@ class _TodoListState extends State<TodoList> {
             ),
           ),
           Expanded(
-            child: _buildTodoList(context),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: _buildTodoList(context),
+            ),
           ),
         ],
       ),
@@ -131,6 +134,7 @@ class _TodoListState extends State<TodoList> {
                       subtitle: todo.tags.isEmpty
                           ? Text('no provided tags')
                           : Wrap(
+                              spacing: 20,
                               children: todo.tags
                                   .map((tag) => Chip(label: Text(tag)))
                                   .toList(),
